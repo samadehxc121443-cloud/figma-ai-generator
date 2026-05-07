@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3001;
 
 app.use(express.json({ limit: "10mb" }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
+  origin: process.env.FRONTEND_URL || "https://figma-ai-frontend.onrender.com",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
@@ -133,3 +133,4 @@ app.listen(PORT, () => {
   console.log(`🎨 Figma: ${process.env.FIGMA_ACCESS_TOKEN ? "configurado" : "❌ falta FIGMA_ACCESS_TOKEN"}`);
   console.log(`🤖 Claude: ${process.env.ANTHROPIC_API_KEY ? "configurado" : "❌ falta ANTHROPIC_API_KEY"}\n`);
 });
+
