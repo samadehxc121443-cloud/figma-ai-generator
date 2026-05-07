@@ -9,15 +9,19 @@ const PORT = process.env.PORT || 3001;
 
 app.use(express.json({ limit: "10mb" }));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "https://figma-ai-frontend.onrender.com",
+  origin: [
+    process.env.FRONTEND_URL || "https://figma-ai-frontend.onrender.com",
+    "https://figma-ai-frontend.onrender.com",
+    "http://localhost:5173",
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
-const claudeLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
+const aiLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
 app.use("/api/", apiLimiter);
-app.use("/api/claude/", claudeLimiter);
+app.use("/api/claude/", aiLimiter);
 
 // ── HEALTH ────────────────────────────────────────────────────────────────
 app.get("/health", (req, res) => {
@@ -25,7 +29,7 @@ app.get("/health", (req, res) => {
     status: "ok",
     timestamp: new Date().toISOString(),
     figma_configured: !!process.env.FIGMA_ACCESS_TOKEN,
-    anthropic_configured: !!process.env.ANTHROPIC_API_KEY,
+    ai_configured: !!process.env.GROQ_API_KEY,
   });
 });
 
@@ -35,64 +39,25 @@ const figma = axios.create({
   headers: { "X-Figma-Token": process.env.FIGMA_ACCESS_TOKEN },
 });
 
-// GET /api/figma/me — user info
 app.get("/api/figma/me", async (req, res) => {
-  try {
-    const r = await figma.get("/me");
-    res.json(r.data);
-  } catch (e) { handleFigmaError(e, res); }
+  try { res.json((await figma.get("/me")).data); }
+  catch (e) { handleFigmaError(e, res); }
 });
 
-// GET /api/figma/projects — list user projects
-app.get("/api/figma/projects", async (req, res) => {
-  try {
-    const me = await figma.get("/me");
-    const teamId = me.data.id;
-    const r = await figma.get(`/users/${teamId}/projects`);
-    res.json(r.data);
-  } catch (e) { handleFigmaError(e, res); }
-});
-
-// GET /api/figma/files — list recent files
 app.get("/api/figma/files", async (req, res) => {
-  try {
-    const r = await figma.get("/me/files");
-    res.json(r.data);
-  } catch (e) { handleFigmaError(e, res); }
+  try { res.json((await figma.get("/me/files")).data); }
+  catch (e) { handleFigmaError(e, res); }
 });
 
-// GET /api/figma/file/:key — get file details
 app.get("/api/figma/file/:key", async (req, res) => {
-  try {
-    const r = await figma.get(`/files/${req.params.key}`);
-    res.json(r.data);
-  } catch (e) { handleFigmaError(e, res); }
+  try { res.json((await figma.get(`/files/${req.params.key}`)).data); }
+  catch (e) { handleFigmaError(e, res); }
 });
 
-// GET /api/figma/file/:key/images — get rendered images
 app.get("/api/figma/file/:key/images", async (req, res) => {
   try {
     const { ids, scale, format } = req.query;
-    const r = await figma.get(`/images/${req.params.key}`, {
-      params: { ids, scale: scale || 1, format: format || "png" }
-    });
-    res.json(r.data);
-  } catch (e) { handleFigmaError(e, res); }
-});
-
-// GET /api/figma/file/:key/thumbnails — get file thumbnail
-app.get("/api/figma/file/:key/thumbnails", async (req, res) => {
-  try {
-    const r = await figma.get(`/files/${req.params.key}/thumbnails`);
-    res.json(r.data);
-  } catch (e) { handleFigmaError(e, res); }
-});
-
-// POST /api/figma/file/:key/comments — add comment
-app.post("/api/figma/file/:key/comments", async (req, res) => {
-  try {
-    const r = await figma.post(`/files/${req.params.key}/comments`, req.body);
-    res.json(r.data);
+    res.json((await figma.get(`/images/${req.params.key}`, { params: { ids, scale: scale || 1, format: format || "png" } })).data);
   } catch (e) { handleFigmaError(e, res); }
 });
 
@@ -103,34 +68,50 @@ function handleFigmaError(err, res) {
   res.status(err.response?.status || 500).json({ error: err.response?.data?.message || "Error en Figma API" });
 }
 
-// ── ANTHROPIC PROXY ───────────────────────────────────────────────────────
+// ── GROQ AI PROXY (100% gratis — llama-3.3-70b) ───────────────────────────
 app.post("/api/claude", async (req, res) => {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: "ANTHROPIC_API_KEY no configurada" });
+  if (!process.env.GROQ_API_KEY) {
+    return res.status(500).json({ error: "GROQ_API_KEY no configurada en el servidor" });
   }
   try {
+    const { messages, system, max_tokens } = req.body;
+
+    // Construir mensajes en formato OpenAI (que usa Groq)
+    const groqMessages = [];
+    if (system) groqMessages.push({ role: "system", content: system });
+    if (messages) groqMessages.push(...messages);
+
     const r = await axios.post(
-      "https://api.anthropic.com/v1/messages",
-      req.body,
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama-3.3-70b-versatile",
+        messages: groqMessages,
+        max_tokens: max_tokens || 2000,
+        temperature: 0.7,
+      },
       {
         headers: {
-          "x-api-key": process.env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
     );
-    res.json(r.data);
+
+    // Convertir respuesta al formato que espera el frontend (compatible con Anthropic)
+    const text = r.data.choices[0].message.content;
+    res.json({ content: [{ type: "text", text }] });
+
   } catch (e) {
+    console.error("Groq error:", e.response?.status, e.response?.data);
     if (e.response?.status === 429) return res.status(429).json({ error: "Rate limit alcanzado. Espera un momento." });
-    res.status(e.response?.status || 500).json({ error: e.response?.data?.error?.message || "Error en Claude API" });
+    if (e.response?.status === 401) return res.status(401).json({ error: "GROQ_API_KEY inválida" });
+    res.status(e.response?.status || 500).json({ error: e.response?.data?.error?.message || "Error en AI API" });
   }
 });
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Figma AI Backend en puerto ${PORT}`);
   console.log(`✅ Health: http://localhost:${PORT}/health`);
-  console.log(`🎨 Figma: ${process.env.FIGMA_ACCESS_TOKEN ? "configurado" : "❌ falta FIGMA_ACCESS_TOKEN"}`);
-  console.log(`🤖 Claude: ${process.env.ANTHROPIC_API_KEY ? "configurado" : "❌ falta ANTHROPIC_API_KEY"}\n`);
+  console.log(`🎨 Figma: ${process.env.FIGMA_ACCESS_TOKEN ? "✅ configurado" : "❌ falta"}`);
+  console.log(`🤖 Groq AI: ${process.env.GROQ_API_KEY ? "✅ configurado" : "❌ falta"}\n`);
 });
-
