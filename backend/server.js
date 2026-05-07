@@ -115,3 +115,4 @@ app.listen(PORT, () => {
   console.log(`🎨 Figma: ${process.env.FIGMA_ACCESS_TOKEN ? "✅ configurado" : "❌ falta"}`);
   console.log(`🤖 Groq AI: ${process.env.GROQ_API_KEY ? "✅ configurado" : "❌ falta"}\n`);
 });
+
