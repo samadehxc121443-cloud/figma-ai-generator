@@ -10,8 +10,8 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json({ limit: "10mb" }));
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || "https://figma-ai-frontend.onrender.com",
-    "https://figma-ai-frontend.onrender.com",
+    process.env.FRONTEND_URL || "https://figma-ai-frontend.onrender.com","https://figma-ai-generator-8c58-j4gsfeact.vercel.app","https://slides-generator.vercel.app",
+    "https://figma-ai-frontend.onrender.com","https://figma-ai-generator-8c58-j4gsfeact.vercel.app","https://slides-generator.vercel.app",
     "http://localhost:5173",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -115,4 +115,5 @@ app.listen(PORT, () => {
   console.log(`🎨 Figma: ${process.env.FIGMA_ACCESS_TOKEN ? "✅ configurado" : "❌ falta"}`);
   console.log(`🤖 Groq AI: ${process.env.GROQ_API_KEY ? "✅ configurado" : "❌ falta"}\n`);
 });
+
 
