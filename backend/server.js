@@ -10,11 +10,12 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json({ limit: "10mb" }));
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || "https://figma-ai-frontend.onrender.com","https://figma-ai-generator-8c58-j4gsfeact.vercel.app","https://slides-generator.vercel.app",
-    "https://figma-ai-frontend.onrender.com","https://figma-ai-generator-8c58-j4gsfeact.vercel.app","https://slides-generator.vercel.app",
+    process.env.FRONTEND_URL || "https://figma-ai-frontend.onrender.com",
+    "https://figma-ai-generator-8c58-j4gsfeact.vercel.app",
+    "https://slides-generator.vercel.app",
     "http://localhost:5173",
   ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
@@ -25,12 +26,7 @@ app.use("/api/claude/", aiLimiter);
 
 // ── HEALTH ────────────────────────────────────────────────────────────────
 app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    figma_configured: !!process.env.FIGMA_ACCESS_TOKEN,
-    ai_configured: !!process.env.GROQ_API_KEY,
-  });
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // ── FIGMA PROXY ───────────────────────────────────────────────────────────
@@ -75,6 +71,7 @@ app.post("/api/claude", async (req, res) => {
   }
   try {
     const { messages, system, max_tokens } = req.body;
+    const safeMaxTokens = Math.min(Math.max(parseInt(max_tokens) || 3000, 100), 4000);
 
     // Construir mensajes en formato OpenAI (que usa Groq)
     const groqMessages = [];
@@ -86,7 +83,7 @@ app.post("/api/claude", async (req, res) => {
       {
         model: "llama-3.3-70b-versatile",
         messages: groqMessages,
-        max_tokens: max_tokens || 2000,
+        max_tokens: safeMaxTokens,
         temperature: 0.7,
       },
       {
