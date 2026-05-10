@@ -53,8 +53,7 @@ const SlidePreview = React.memo(({ slide, index, selected, onClick }) => {
         borderRadius: 16,
         overflow: "hidden",
         cursor: "pointer",
-        transition: "all 0.35s cubic-bezier(0.23, 1, 0.32, 1)",
-        transformStyle: "preserve-3d",
+        transition: "transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.35s cubic-bezier(0.23, 1, 0.32, 1)",
         transform: selected
           ? "scale(1.02) translateZ(8px)"
           : hov
