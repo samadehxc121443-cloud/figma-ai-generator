@@ -361,7 +361,7 @@ INSTRUCCIONES CRÍTICAS:
   const resetAll = () => { setSlides([]); setPrompt(""); setSelectedSlide(null); setChatMsgs([]); };
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#080810", color: "#E8E8F0", fontFamily: "'Inter', system-ui, sans-serif", fontSize: 13, overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "#06060f", color: "#E8E8F0", fontFamily: "'Inter', system-ui, sans-serif", fontSize: 13, overflow: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -392,7 +392,7 @@ INSTRUCCIONES CRÍTICAS:
               </svg>
             </div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", letterSpacing: "-0.4px" }}>Slides AI</div>
+              <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "-0.02em", background: "linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Slides AI</div>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,.3)" }}>Generador de Plantillas</div>
             </div>
           </div>
@@ -400,7 +400,7 @@ INSTRUCCIONES CRÍTICAS:
 
         {/* Types */}
         <div style={{ padding: "12px 10px 8px" }}>
-          <div style={{ fontSize: 9.5, fontWeight: 700, color: "rgba(255,255,255,.22)", textTransform: "uppercase", letterSpacing: "0.9px", marginBottom: 8, padding: "0 4px" }}>Tipo de Diseño</div>
+          <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "8px", marginTop: "20px", padding: "0 4px" }}>Tipo de Diseño</div>
           {Object.entries(TYPES).map(([k, v]) => (
             <button key={k} onClick={() => {
                 if (slides.length > 0) {
@@ -420,7 +420,7 @@ INSTRUCCIONES CRÍTICAS:
           {history.length > 0 && (
             <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 4px 8px" }}>
-                <span style={{ fontSize: 9.5, fontWeight: 700, color: "rgba(255,255,255,.22)", textTransform: "uppercase", letterSpacing: "0.9px" }}>Historial ({history.length})</span>
+                <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginTop: "20px" }}>Historial ({history.length})</span>
                 {confirmClear
                   ? <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={() => { setHistory([]); setConfirmClear(false); }} style={{ fontSize: 10, color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>Borrar</button>
@@ -518,7 +518,7 @@ INSTRUCCIONES CRÍTICAS:
                   <input value={title} onChange={e => setTitle(e.target.value)} style={{ background: "transparent", border: "none", color: "#fff", fontSize: 20, fontWeight: 900, fontFamily: "inherit", outline: "none", flex: 1, letterSpacing: "-0.5px" }} placeholder="Título del proyecto..." />
                   <span style={{ fontSize: 11, color: "rgba(255,255,255,.2)", flexShrink: 0 }}>{new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", padding: "32px", perspective: "1200px" }}>
                   {generating
                     ? Array.from({ length: 6 }).map((_, i) => <SlideSkeleton key={i} index={i} />)
                     : slides.map((slide, i) => (
