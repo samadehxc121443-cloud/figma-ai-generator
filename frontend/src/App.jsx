@@ -61,7 +61,7 @@ const SlidePreview = React.memo(({ slide, index, selected, onClick }) => {
           ? "rotateY(4deg) rotateX(3deg) translateZ(24px) scale(1.01)"
           : "rotateY(0deg) rotateX(0deg) translateZ(0px) scale(1)",
         boxShadow: selected
-          ? `0 0 0 2px ${scheme.accent}, 0 20px 60px ${scheme.accent}30`
+          ? `0 0 0 2px ${scheme.accent}, 0 20px 40px ${scheme.accent}30`
           : hov
           ? `0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px ${scheme.accent}40, -8px 8px 24px ${scheme.accent}15`
           : `0 4px 16px rgba(0,0,0,0.3)`,
@@ -82,7 +82,7 @@ const SlidePreview = React.memo(({ slide, index, selected, onClick }) => {
         {/* Decorative elements */}
         <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: `${scheme.accent}18`, pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -30, left: -30, width: 120, height: 120, borderRadius: "50%", background: `${scheme.accent}10`, pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: hov ? "3px" : "2px", background: `linear-gradient(90deg, ${scheme.accent}, ${scheme.accent}80, transparent)`, transition: "height 0.35s cubic-bezier(0.23, 1, 0.32, 1), width 0.35s cubic-bezier(0.23, 1, 0.32, 1)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: hov ? "3px" : "2px", width: hov ? "100%" : "70%", background: `linear-gradient(90deg, ${scheme.accent}, ${scheme.accent}80, transparent)`, transition: "height 0.35s cubic-bezier(0.23, 1, 0.32, 1), width 0.35s cubic-bezier(0.23, 1, 0.32, 1)" }} />
 
         {/* Slide number + type */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 1 }}>
