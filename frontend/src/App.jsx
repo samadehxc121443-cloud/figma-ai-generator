@@ -291,17 +291,32 @@ INSTRUCCIONES CRÍTICAS:
     setChatMsgs(m => [...m, { role: "user", content: msg }]);
     setChatLoading(true);
     try {
+      // Build conversation history for AI context
+      const conversationHistory = chatMsgs
+        .filter(m => m.role === "user" || m.role === "ai")
+        .map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content }));
+
       const raw = await aiCall(
-        [{ role: "user", content: msg }],
+        [...conversationHistory, { role: "user", content: msg }],
         buildChatSystemPrompt(slides)
       );
-      const updated = parseSlides(raw);
+      let updated;
+      try {
+        updated = parseSlides(raw);
+      } catch (parseErr) {
+        updated = null;
+      }
+
       if (updated && updated.length > 0) {
         setSlides(updated);
-        setChatMsgs(m => [...m, { role: "ai", content: `✓ Actualicé las slides. ${updated.length} slides en total.` }]);
+        setChatMsgs(prev => [...prev, { role: "ai", content: "✓ Slides actualizadas." }]);
         showToast("Slides actualizados", "success");
       } else {
-        setChatMsgs(m => [...m, { role: "ai", content: raw.length < 300 ? raw : "No pude procesar ese cambio. Sé más específico." }]);
+        const isShortText = typeof raw === "string" && raw.length < 300;
+        setChatMsgs(prev => [...prev, {
+          role: "ai",
+          content: isShortText ? raw : "No pude interpretar la respuesta de la IA. Intentá reformular tu pedido."
+        }]);
       }
     } catch (e) {
       setChatMsgs(m => [...m, { role: "ai", content: "Error al procesar. Intentá reformular el cambio." }]);
@@ -353,7 +368,12 @@ INSTRUCCIONES CRÍTICAS:
         <div style={{ padding: "12px 10px 8px" }}>
           <div style={{ fontSize: 9.5, fontWeight: 700, color: "rgba(255,255,255,.22)", textTransform: "uppercase", letterSpacing: "0.9px", marginBottom: 8, padding: "0 4px" }}>Tipo de Diseño</div>
           {Object.entries(TYPES).map(([k, v]) => (
-            <button key={k} onClick={() => { setSelectedType(k); setSlides([]); setSelectedSlide(null); setChatMsgs([]); }}
+            <button key={k} onClick={() => {
+                if (slides.length > 0) {
+                  if (!window.confirm("Cambiar el tipo borrará las slides actuales. ¿Continuar?")) return;
+                }
+                setSelectedType(k); setSlides([]); setSelectedSlide(null); setChatMsgs([]);
+              }}
               style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 10, border: "none", background: selectedType === k ? `${v.color}18` : "transparent", color: selectedType === k ? v.color : "rgba(255,255,255,.4)", cursor: "pointer", fontSize: 12, fontFamily: "inherit", textAlign: "left", transition: "all .15s", marginBottom: 2, fontWeight: selectedType === k ? 700 : 400, borderLeft: `2px solid ${selectedType === k ? v.color : "transparent"}` }}>
               <span style={{ fontSize: 14, opacity: 0.8 }}>{v.icon}</span>
               {v.label}
