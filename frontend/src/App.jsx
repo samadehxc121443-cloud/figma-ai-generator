@@ -284,10 +284,46 @@ export default function App() {
 
   const SYSTEM_GENERATE = `Eres un experto en diseño visual y comunicación. Genera slides visualmente impactantes y profesionales. Responde ÚNICAMENTE con un array JSON válido, sin backticks ni texto adicional.`;
 
-  const buildGeneratePrompt = (type, prompt, title) => {
-    const def = TYPES[type];
-    return `Genera una ${def.label} completa y visualmente impactante${title ? ` titulada "${title}"` : ""} sobre: "${prompt}"
+  const extractKeywords = async (prompt) => {
+    try {
+      const response = await fetch(`${BACKEND}/api/claude`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+          system: "Respond with ONLY 1-3 keywords in English that best summarize this topic. No punctuation, no explanation.",
+          max_tokens: 20,
+        }),
+      });
+      const data = await response.json();
+      return data?.content?.[0]?.text?.trim() || prompt.slice(0, 50);
+    } catch {
+      return prompt.slice(0, 50);
+    }
+  };
 
+  const fetchResearchContext = async (topic) => {
+    try {
+      const response = await fetch(`${BACKEND}/api/research`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.found ? data : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const buildGeneratePrompt = (type, prompt, title, research = null) => {
+    const def = TYPES[type];
+    const researchBlock = research
+      ? `\nCONTEXTO VERIFICADO SOBRE EL TEMA:\n${research.context}\n${research.facts && research.facts.length > 0 ? `\nHECHOS DISPONIBLES: ${research.facts.join(", ")}` : ""}\n\nINSTRUCCIONES DE CONTENIDO:\n- Usar los datos del contexto para métricas reales (no inventar porcentajes)\n- Los bullets deben referenciar hechos específicos del contexto\n- Mínimo 2 slides deben incluir métricas del contexto verificado\n`
+      : "";
+    return `Genera una ${def.label} completa y visualmente impactante${title ? ` titulada "${title}"` : ""} sobre: "${prompt}"
+${researchBlock}
 Crea entre 6-10 slides. Devuelve ÚNICAMENTE un array JSON con esta estructura exacta para cada slide:
 [
   {
@@ -295,9 +331,10 @@ Crea entre 6-10 slides. Devuelve ÚNICAMENTE un array JSON con esta estructura e
     "title": "Título impactante y conciso (máx 8 palabras)",
     "subtitle": "Subtítulo o descripción que amplía el título (1-2 oraciones)",
     "bullets": ["Punto clave 1 específico", "Punto clave 2 específico", "Punto clave 3 específico"],
-    "metric": "75%",
-    "metricLabel": "descripción de la métrica (opcional, solo si hay datos)",
+    "metric": "número o dato real",
+    "metricLabel": "descripción de la métrica (solo si hay datos reales)",
     "tag": "etiqueta corta (opcional)",
+    "source": "Wikipedia (solo si la métrica viene del contexto verificado, si no omitir)",
     "content": "Párrafo adicional de contexto o detalle importante (1-2 oraciones)"
   }
 ]
@@ -306,8 +343,8 @@ REGLAS CRÍTICAS:
 - Cada slide debe tener contenido ÚNICO y específico para "${prompt}"
 - Los títulos deben ser poderosos y directos
 - Los bullets deben ser concretos y accionables (no genéricos)
-- Incluye métricas reales/estimadas cuando aplique
 - NO incluyas bullets vacíos o genéricos como "Punto 1"
+- Si no hay datos reales disponibles, NO inventes métricas — omite el campo
 - Varía los tipos de slide para crear narrativa visual`;
   };
 
@@ -332,7 +369,18 @@ INSTRUCCIONES CRÍTICAS:
     if (!prompt.trim()) { showToast("Describí qué querés generar"); return; }
     setGenerating(true); setSlides([]); setSelectedSlide(null); setChatMsgs([]);
     try {
-      const raw = await aiCall([{ role: "user", content: buildGeneratePrompt(selectedType, prompt, title) }], SYSTEM_GENERATE);
+      // Step 1: Extract keywords for Wikipedia search
+      const keywords = await extractKeywords(prompt);
+
+      // Step 2: Fetch research context (non-blocking — if it fails, we continue)
+      const research = await fetchResearchContext(keywords);
+
+      // Step 3: Build enriched prompt and generate
+      const enrichedPrompt = buildGeneratePrompt(selectedType, prompt, title, research);
+      const raw = await aiCall(
+        [{ role: "user", content: enrichedPrompt }],
+        "Eres un experto en diseño visual y comunicación. Genera slides visualmente impactantes y profesionales. Responde ÚNICAMENTE con un array JSON válido, sin backticks ni texto adicional."
+      );
       const result = parseSlides(raw);
       setSlides(result);
       setSelectedSlide(0);
