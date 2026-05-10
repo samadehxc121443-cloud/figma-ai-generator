@@ -71,7 +71,7 @@ app.post("/api/claude", async (req, res) => {
   }
   try {
     const { messages, system, max_tokens } = req.body;
-    const safeMaxTokens = Math.min(Math.max(parseInt(max_tokens) || 3000, 100), 4000);
+    const safeMaxTokens = Math.min(Math.max(parseInt(max_tokens, 10) || 3000, 100), 4000);
 
     // Construir mensajes en formato OpenAI (que usa Groq)
     const groqMessages = [];
