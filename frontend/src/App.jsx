@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "https://figma-ai-generator.onrender.com";
 
@@ -40,7 +40,7 @@ function parseSlides(text) {
 }
 
 // ─── SLIDE PREVIEW ──────────────────────────────────────────────────────────
-function SlidePreview({ slide, index, selected, onClick }) {
+const SlidePreview = React.memo(({ slide, index, selected, onClick }) => {
   const scheme = SLIDE_COLORS[index % SLIDE_COLORS.length];
   const [hov, setHov] = useState(false);
 
@@ -108,6 +108,11 @@ function SlidePreview({ slide, index, selected, onClick }) {
                   <span style={{ fontSize: 10.5, color: `${scheme.text}70`, lineHeight: 1.5 }}>{b}</span>
                 </div>
               ))}
+              {slide.bullets.length > 3 && (
+                <div style={{ opacity: 0.5, fontSize: "10px", marginTop: "2px" }}>
+                  +{slide.bullets.length - 3} mas
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -128,7 +133,7 @@ function SlidePreview({ slide, index, selected, onClick }) {
       </div>
     </div>
   );
-}
+});
 
 // ─── SKELETON ───────────────────────────────────────────────────────────────
 function SlideSkeleton({ index }) {
@@ -208,11 +213,13 @@ export default function App() {
   const [prompt, setPrompt] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [promptFocused, setPromptFocused] = useState(false);
 
   // Chat
   const [chatMsgs, setChatMsgs] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatFocused, setChatFocused] = useState(false);
   const chatEnd = useRef(null);
   const chatInputRef = useRef(null);
 
@@ -530,14 +537,14 @@ INSTRUCCIONES CRÍTICAS:
             <div style={{ padding: 16, borderBottom: "1px solid rgba(255,255,255,.06)" }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.22)", textTransform: "uppercase", letterSpacing: "0.85px", marginBottom: 10 }}>Generación</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-                <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título del proyecto..." style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 9, color: "#fff", fontFamily: "inherit", fontSize: 12.5, padding: "8px 11px", outline: "none", width: "100%", transition: "border-color .15s" }}
-                  onFocus={e => e.target.style.borderColor = def.color + "70"}
-                  onBlur={e => e.target.style.borderColor = "rgba(255,255,255,.07)"} />
+                <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título del proyecto..." style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderColor: promptFocused ? def.color + "70" : "rgba(255,255,255,.07)", borderRadius: 9, color: "#fff", fontFamily: "inherit", fontSize: 12.5, padding: "8px 11px", outline: "none", width: "100%", transition: "border-color .15s" }}
+                  onFocus={() => setPromptFocused(true)}
+                  onBlur={() => setPromptFocused(false)} />
                 <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === "Enter" && e.ctrlKey && generate()} rows={5}
                   placeholder={"Describí tu idea con detalle...\n\nEj: Presentación de pitch para startup de delivery de comida saludable, dirigida a inversores Serie A, con foco en métricas de crecimiento y modelo de negocio"}
-                  style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 9, color: "#fff", fontFamily: "inherit", fontSize: 12.5, padding: "10px 11px", resize: "none", outline: "none", lineHeight: 1.7, width: "100%", transition: "border-color .15s" }}
-                  onFocus={e => e.target.style.borderColor = def.color + "70"}
-                  onBlur={e => e.target.style.borderColor = "rgba(255,255,255,.07)"} />
+                  style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderColor: promptFocused ? def.color + "70" : "rgba(255,255,255,.07)", borderRadius: 9, color: "#fff", fontFamily: "inherit", fontSize: 12.5, padding: "10px 11px", resize: "none", outline: "none", lineHeight: 1.7, width: "100%", transition: "border-color .15s" }}
+                  onFocus={() => setPromptFocused(true)}
+                  onBlur={() => setPromptFocused(false)} />
                 <button onClick={generate} disabled={generating} style={{ padding: "11px", background: generating ? "rgba(124,106,247,.3)" : `linear-gradient(135deg, ${def.color}, ${def.color}BB)`, border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: generating ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: generating ? "none" : `0 4px 20px ${def.color}35`, opacity: generating ? .7 : 1, transition: "all .2s" }}>
                   {generating
                     ? <><div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} /> Generando slides...</>
@@ -599,9 +606,9 @@ INSTRUCCIONES CRÍTICAS:
                     disabled={slides.length === 0}
                     rows={2}
                     placeholder={slides.length > 0 ? "Describí exactamente qué cambiar..." : "Generá slides primero"}
-                    style={{ flex: 1, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 9, color: "#fff", fontFamily: "inherit", fontSize: 12.5, padding: "9px 12px", outline: "none", resize: "none", opacity: slides.length > 0 ? 1 : .5, transition: "border-color .15s", lineHeight: 1.6 }}
-                    onFocus={e => e.target.style.borderColor = def.color + "70"}
-                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,.07)"}
+                    style={{ flex: 1, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderColor: chatFocused ? def.color + "70" : "rgba(255,255,255,.07)", borderRadius: 9, color: "#fff", fontFamily: "inherit", fontSize: 12.5, padding: "9px 12px", outline: "none", resize: "none", opacity: slides.length > 0 ? 1 : .5, transition: "border-color .15s", lineHeight: 1.6 }}
+                    onFocus={() => setChatFocused(true)}
+                    onBlur={() => setChatFocused(false)}
                   />
                   <button onClick={sendChat} disabled={slides.length === 0 || !chatInput.trim() || chatLoading}
                     style={{ padding: "9px 14px", background: slides.length > 0 && chatInput.trim() ? def.color : "rgba(255,255,255,.05)", border: "none", borderRadius: 9, color: "#fff", fontSize: 18, fontFamily: "inherit", fontWeight: 700, cursor: slides.length > 0 && chatInput.trim() ? "pointer" : "not-allowed", opacity: slides.length > 0 && chatInput.trim() ? 1 : .4, transition: "all .15s", alignSelf: "stretch", display: "flex", alignItems: "center" }}>
