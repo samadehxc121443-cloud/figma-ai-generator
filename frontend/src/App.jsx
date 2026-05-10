@@ -162,20 +162,40 @@ function SlideSkeleton({ index }) {
 }
 
 // ─── TOAST ──────────────────────────────────────────────────────────────────
-function Toast({ t }) {
-  if (!t) return null;
-  const ok = t.type === "success";
-  return (
-    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "11px 20px", borderRadius: 12, fontSize: 13, fontWeight: 600, zIndex: 9999, animation: "toastIn .2s ease", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap", background: ok ? "rgba(16,185,129,.18)" : "rgba(239,68,68,.18)", border: `1px solid ${ok ? "rgba(16,185,129,.4)" : "rgba(239,68,68,.4)"}`, color: ok ? "#34D399" : "#FC8181", boxShadow: `0 8px 32px ${ok ? "rgba(16,185,129,.15)" : "rgba(239,68,68,.15)"}` }}>
-      {ok ? (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#34D399" strokeWidth="1.5"/><path d="M4.5 7l2 2 3-3" stroke="#34D399" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-      ) : (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#FC8181" strokeWidth="1.5"/><path d="M7 4.5v3M7 9v.5" stroke="#FC8181" strokeWidth="1.5" strokeLinecap="round"/></svg>
-      )}
-      {t.msg}
-    </div>
-  );
-}
+const Toast = ({ msg, type }) => (
+  <div style={{
+    position: "fixed",
+    bottom: "24px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: type === "success" ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+    border: `1px solid ${type === "success" ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)"}`,
+    backdropFilter: "blur(12px)",
+    borderRadius: "12px",
+    padding: "12px 20px",
+    color: "#fff",
+    fontSize: "13px",
+    fontWeight: 500,
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    zIndex: 9999,
+    animation: "toastIn 0.3s cubic-bezier(0.23, 1, 0.32, 1) both",
+    minWidth: "240px",
+    overflow: "hidden",
+  }}>
+    <span style={{ fontSize: "16px" }}>{type === "success" ? "✓" : "✕"}</span>
+    <span style={{ flex: 1 }}>{msg}</span>
+    <div style={{
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      height: "2px",
+      background: type === "success" ? "#10B981" : "#EF4444",
+      animation: "toastProgress 3s linear forwards",
+    }} />
+  </div>
+);
 
 // ─── CHAT MESSAGE ────────────────────────────────────────────────────────────
 function ChatMsg({ msg, accentColor }) {
@@ -220,6 +240,7 @@ export default function App() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [promptFocused, setPromptFocused] = useState(false);
+  const [generateBtnHovered, setGenerateBtnHovered] = useState(false);
 
   // Chat
   const [chatMsgs, setChatMsgs] = useState([]);
@@ -388,9 +409,12 @@ INSTRUCCIONES CRÍTICAS:
   from { opacity: 0; transform: translateX(16px); }
   to   { opacity: 1; transform: translateX(0); }
 }
-        @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes toastProgress { from { width: 100%; } to { width: 0%; } }
         @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+        .history-item .delete-btn { opacity: 0; transition: opacity 0.2s; }
+        .history-item:hover .delete-btn { opacity: 1; }
         @media print { .np { display: none !important; } }
       `}</style>
 
@@ -447,7 +471,7 @@ INSTRUCCIONES CRÍTICAS:
                 }
               </div>
               {history.map(h => (
-                <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 9, cursor: "pointer", marginBottom: 2, transition: "background .15s" }}
+                <div key={h.id} className="history-item" style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 9, cursor: "pointer", marginBottom: 2, transition: "background .15s" }}
                   onClick={() => { setSlides(h.slides); setTitle(h.title); setSelectedSlide(0); }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.04)"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -461,7 +485,7 @@ INSTRUCCIONES CRÍTICAS:
                         <button onClick={e => { e.stopPropagation(); setHistory(hh => hh.filter(i => i.id !== h.id)); setDeleteId(null); }} style={{ fontSize: 10, color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>Sí</button>
                         <button onClick={e => { e.stopPropagation(); setDeleteId(null); }} style={{ fontSize: 10, color: "rgba(255,255,255,.3)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>No</button>
                       </div>
-                    : <button onClick={e => { e.stopPropagation(); setDeleteId(h.id); }} style={{ color: "rgba(255,255,255,.1)", background: "none", border: "none", cursor: "pointer", padding: 3, borderRadius: 5, display: "flex", transition: "all .15s" }}
+                    : <button className="delete-btn" onClick={e => { e.stopPropagation(); setDeleteId(h.id); }} style={{ color: "rgba(255,255,255,.1)", background: "none", border: "none", cursor: "pointer", padding: 3, borderRadius: 5, display: "flex", transition: "all .15s" }}
                         onMouseEnter={e => { e.currentTarget.style.color = "#EF4444"; e.currentTarget.style.background = "rgba(239,68,68,.1)"; }}
                         onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,.1)"; e.currentTarget.style.background = "none"; }}>
                         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M1 2.5h9M3.5 2.5V1.5h4v1M2 2.5l.7 7h5.6l.7-7"/></svg>
@@ -559,10 +583,54 @@ INSTRUCCIONES CRÍTICAS:
                   onBlur={() => setPromptFocused(false)} />
                 <textarea value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === "Enter" && e.ctrlKey && generate()} rows={5}
                   placeholder={"Describí tu idea con detalle...\n\nEj: Presentación de pitch para startup de delivery de comida saludable, dirigida a inversores Serie A, con foco en métricas de crecimiento y modelo de negocio"}
-                  style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderColor: promptFocused ? def.color + "70" : "rgba(255,255,255,.07)", borderRadius: 9, color: "#fff", fontFamily: "inherit", fontSize: 12.5, padding: "10px 11px", resize: "none", outline: "none", lineHeight: 1.7, width: "100%", transition: "border-color .15s" }}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: `1px solid ${promptFocused ? "rgba(124, 106, 247, 0.6)" : "rgba(255,255,255,0.08)"}`,
+                    boxShadow: promptFocused
+                      ? "0 0 0 3px rgba(124, 106, 247, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)"
+                      : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
+                    borderRadius: 9,
+                    color: "#fff",
+                    fontFamily: "inherit",
+                    fontSize: 12.5,
+                    padding: "10px 11px",
+                    resize: "none",
+                    outline: "none",
+                    lineHeight: 1.7,
+                    width: "100%",
+                  }}
                   onFocus={() => setPromptFocused(true)}
                   onBlur={() => setPromptFocused(false)} />
-                <button onClick={generate} disabled={generating} style={{ padding: "11px", background: generating ? "rgba(124,106,247,.3)" : `linear-gradient(135deg, ${def.color}, ${def.color}BB)`, border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: generating ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: generating ? "none" : `0 4px 20px ${def.color}35`, opacity: generating ? .7 : 1, transition: "all .2s" }}>
+                <button onClick={generate} disabled={generating}
+                  onMouseEnter={() => setGenerateBtnHovered(true)}
+                  onMouseLeave={() => setGenerateBtnHovered(false)}
+                  style={{
+                    width: "100%",
+                    padding: "14px",
+                    background: generating
+                      ? "rgba(124, 106, 247, 0.4)"
+                      : generateBtnHovered
+                      ? "linear-gradient(135deg, #8B7AFF, #6B5CE7)"
+                      : "linear-gradient(135deg, #7C6AF7, #5B4ED6)",
+                    border: generating ? "1px solid rgba(124, 106, 247, 0.6)" : "none",
+                    borderRadius: "12px",
+                    color: "#fff",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    letterSpacing: "0.02em",
+                    cursor: generating ? "not-allowed" : "pointer",
+                    transition: "all 0.2s cubic-bezier(0.23, 1, 0.32, 1)",
+                    transform: generateBtnHovered && !generating ? "translateY(-1px)" : "none",
+                    boxShadow: generateBtnHovered && !generating
+                      ? "0 8px 24px rgba(124, 106, 247, 0.4)"
+                      : "0 4px 12px rgba(124, 106, 247, 0.2)",
+                    fontFamily: "inherit",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}>
                   {generating
                     ? <><div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} /> Generando slides...</>
                     : <><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6.5 1l1.1 3.6H11l-2.8 2 1 3.2-2.8-2-2.8 2 1-3.2L2 4.6h3.4z"/></svg> Generar {def.label}</>
@@ -639,7 +707,7 @@ INSTRUCCIONES CRÍTICAS:
         </div>
       </div>
 
-      <Toast t={toast} />
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
     </div>
   );
 }
