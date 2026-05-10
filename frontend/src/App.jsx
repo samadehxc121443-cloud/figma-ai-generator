@@ -143,19 +143,24 @@ const SlidePreview = React.memo(({ slide, index, selected, onClick }) => {
 
 // ─── SKELETON ───────────────────────────────────────────────────────────────
 function SlideSkeleton({ index }) {
+  const shimmerStyle = {
+    background: "linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 75%)",
+    backgroundSize: "200% 100%",
+    animation: "shimmer 2s infinite, fadeUp 0.4s ease both",
+    borderRadius: "6px",
+  };
   return (
     <div style={{ borderRadius: 16, overflow: "hidden", animation: `fadeUp 0.4s ease ${index * 60}ms both` }}>
       <div style={{ aspectRatio: "16/9", background: "rgba(255,255,255,0.04)", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)", animation: "shimmer 1.5s infinite" }} />
         <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ height: 10, width: "30%", background: "rgba(255,255,255,0.08)", borderRadius: 5 }} />
-          <div style={{ height: 18, width: "70%", background: "rgba(255,255,255,0.1)", borderRadius: 6 }} />
-          <div style={{ height: 10, width: "85%", background: "rgba(255,255,255,0.06)", borderRadius: 5 }} />
-          <div style={{ height: 10, width: "60%", background: "rgba(255,255,255,0.06)", borderRadius: 5 }} />
+          <div style={{ height: 10, width: "30%", ...shimmerStyle }} />
+          <div style={{ height: 18, width: "70%", ...shimmerStyle }} />
+          <div style={{ height: 10, width: "85%", ...shimmerStyle }} />
+          <div style={{ height: 10, width: "60%", ...shimmerStyle }} />
         </div>
       </div>
       <div style={{ background: "#111118", padding: "10px 14px" }}>
-        <div style={{ height: 10, width: "50%", background: "rgba(255,255,255,0.06)", borderRadius: 5 }} />
+        <div style={{ height: 10, width: "50%", ...shimmerStyle }} />
       </div>
     </div>
   );
@@ -207,14 +212,26 @@ function ChatMsg({ msg, accentColor }) {
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="1.5"><path d="M6 1l1 3.2H10l-2.6 1.9.9 3L6 7.2 3.7 9.1l.9-3L2 4.2h3z"/></svg>
         </div>
       )}
-      <div style={{
-        padding: "9px 13px",
-        borderRadius: isAi ? "4px 13px 13px 13px" : "13px 4px 13px 13px",
-        fontSize: 12.5,
-        lineHeight: 1.65,
-        background: isAi ? "rgba(255,255,255,0.05)" : `${accentColor}20`,
-        border: `1px solid ${isAi ? "rgba(255,255,255,0.08)" : accentColor + "35"}`,
-        color: isAi ? "rgba(255,255,255,0.78)" : accentColor,
+      <div style={isAi ? {
+        maxWidth: "85%",
+        alignSelf: "flex-start",
+        background: "rgba(255,255,255,0.05)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: "16px 16px 16px 4px",
+        padding: "10px 14px",
+        fontSize: "13px",
+        lineHeight: "1.5",
+        color: "rgba(255,255,255,0.85)",
+      } : {
+        maxWidth: "85%",
+        alignSelf: "flex-end",
+        background: "linear-gradient(135deg, rgba(124, 106, 247, 0.25), rgba(91, 78, 214, 0.15))",
+        border: "1px solid rgba(124, 106, 247, 0.3)",
+        borderRadius: "16px 16px 4px 16px",
+        padding: "10px 14px",
+        fontSize: "13px",
+        lineHeight: "1.5",
+        color: "rgba(255,255,255,0.9)",
       }}>
         {msg.content}
       </div>
@@ -411,8 +428,15 @@ INSTRUCCIONES CRÍTICAS:
 }
         @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         @keyframes toastProgress { from { width: 100%; } to { width: 0%; } }
-        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        @keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+        @keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40%           { transform: translateY(-6px); opacity: 1; }
+}
         .history-item .delete-btn { opacity: 0; transition: opacity 0.2s; }
         .history-item:hover .delete-btn { opacity: 1; }
         @media print { .np { display: none !important; } }
@@ -673,8 +697,16 @@ INSTRUCCIONES CRÍTICAS:
                     <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg, ${def.color}, #EC4899)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="1.5"><path d="M6 1l1 3.2H10l-2.6 1.9.9 3L6 7.2 3.7 9.1l.9-3L2 4.2h3z"/></svg>
                     </div>
-                    <div style={{ padding: "10px 14px", background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", borderRadius: "4px 13px 13px 13px", display: "flex", gap: 5, alignItems: "center" }}>
-                      {[0, .2, .4].map((d, i) => <span key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: def.color, animation: `pulse 1s infinite ${d}s` }} />)}
+                    <div style={{ display: "flex", gap: "5px", alignItems: "center", padding: "8px 0" }}>
+                      {[0, 1, 2].map(i => (
+                        <div key={i} style={{
+                          width: "6px",
+                          height: "6px",
+                          borderRadius: "50%",
+                          background: "#7C6AF7",
+                          animation: `bounce 1.2s ease-in-out ${i * 0.15}s infinite`,
+                        }} />
+                      ))}
                     </div>
                   </div>
                 )}
