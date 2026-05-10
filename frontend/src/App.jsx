@@ -430,7 +430,7 @@ INSTRUCCIONES CRÍTICAS:
                   <span style={{ width: 5, height: 5, borderRadius: "50%", background: h.color, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.55)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 }}>{h.title}</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,.22)", marginTop: 1 }}>{h.type} · {h.ts.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,.22)", marginTop: 1 }}>{h.type} · {new Date(h.ts).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}</div>
                   </div>
                   {deleteId === h.id
                     ? <div style={{ display: "flex", gap: 4 }}>
