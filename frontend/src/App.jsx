@@ -198,7 +198,12 @@ export default function App() {
   const [generating, setGenerating] = useState(false);
   const [selectedSlide, setSelectedSlide] = useState(null);
   const [toast, setToast] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem("slides_history");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [title, setTitle] = useState("Mi Diseño");
   const [prompt, setPrompt] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
@@ -209,6 +214,7 @@ export default function App() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEnd = useRef(null);
+  const chatInputRef = useRef(null);
 
   const def = TYPES[selectedType];
 
@@ -219,11 +225,17 @@ export default function App() {
 
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMsgs]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem("slides_history", JSON.stringify(history));
+    } catch {}
+  }, [history]);
+
   const SYSTEM_GENERATE = `Eres un experto en diseño visual y comunicación. Genera slides visualmente impactantes y profesionales. Responde ÚNICAMENTE con un array JSON válido, sin backticks ni texto adicional.`;
 
   const buildGeneratePrompt = (type, prompt, title) => {
     const def = TYPES[type];
-    return `Genera una ${def.label} completa y visualmente impactante para: "${prompt}"
+    return `Genera una ${def.label} completa y visualmente impactante${title ? ` titulada "${title}"` : ""} sobre: "${prompt}"
 
 Crea entre 6-10 slides. Devuelve ÚNICAMENTE un array JSON con esta estructura exacta para cada slide:
 [
@@ -277,9 +289,17 @@ INSTRUCCIONES CRÍTICAS:
       setHistory(h => [{ id, title, type: def.label, color: def.color, ts: new Date(), slides: result }, ...h.slice(0, 19)]);
       setChatMsgs([{ role: "ai", content: `✓ Generé ${result.length} slides para "${prompt}". ¿Querés cambiar algo? Describí exactamente qué modificar.` }]);
       showToast(`${result.length} slides generados`, "success");
-    } catch (e) {
-      showToast("Error al generar. Intentá de nuevo.");
-      console.error(e);
+    } catch (err) {
+      const status = err?.message?.match(/Error (\d+)/)?.[1];
+      const msg = status === "429"
+        ? "Límite de IA alcanzado. Esperá 1 minuto."
+        : status === "401"
+        ? "Error de configuración del servidor."
+        : !navigator.onLine
+        ? "Sin conexión a internet."
+        : "Error al generar. Intentá de nuevo.";
+      showToast(msg, "error");
+      console.error(err);
     }
     setGenerating(false);
   };
@@ -318,10 +338,17 @@ INSTRUCCIONES CRÍTICAS:
           content: isShortText ? raw : "No pude interpretar la respuesta de la IA. Intentá reformular tu pedido."
         }]);
       }
-    } catch (e) {
-      setChatMsgs(m => [...m, { role: "ai", content: "Error al procesar. Intentá reformular el cambio." }]);
+    } catch (err) {
+      const status = err?.message?.match(/Error (\d+)/)?.[1];
+      const chatErrMsg = status === "429"
+        ? "Límite de IA alcanzado. Esperá 1 minuto."
+        : !navigator.onLine
+        ? "Sin conexión a internet."
+        : "Error al conectar con la IA.";
+      setChatMsgs(prev => [...prev, { role: "ai", content: chatErrMsg }]);
     }
     setChatLoading(false);
+    setTimeout(() => chatInputRef.current?.focus(), 50);
   };
 
   const resetAll = () => { setSlides([]); setPrompt(""); setSelectedSlide(null); setChatMsgs([]); };
@@ -565,6 +592,7 @@ INSTRUCCIONES CRÍTICAS:
               <div style={{ padding: "10px 14px 14px", borderTop: "1px solid rgba(255,255,255,.05)" }}>
                 <div style={{ display: "flex", gap: 8 }}>
                   <textarea
+                    ref={chatInputRef}
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendChat())}
