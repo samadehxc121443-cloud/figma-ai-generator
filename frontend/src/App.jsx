@@ -64,7 +64,7 @@ const SlidePreview = React.memo(({ slide, index, selected, onClick }) => {
           : hov
           ? `0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px ${scheme.accent}40, -8px 8px 24px ${scheme.accent}15`
           : `0 4px 16px rgba(0,0,0,0.3)`,
-        animation: `fadeUp 0.5s ease ${index * 80}ms both`,
+        animation: `fadeUp 0.5s cubic-bezier(0.23, 1, 0.32, 1) ${index * 90}ms both`,
       }}
     >
       {/* Slide visual */}
@@ -376,7 +376,18 @@ INSTRUCCIONES CRÍTICAS:
         textarea, input { font-family: 'Inter', system-ui, sans-serif; color-scheme: dark; }
         textarea::placeholder, input::placeholder { color: rgba(255,255,255,.2); }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+        @keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+        @keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
         @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
@@ -384,7 +395,7 @@ INSTRUCCIONES CRÍTICAS:
       `}</style>
 
       {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
-      <div className="np" style={{ width: 230, minWidth: 230, background: "rgba(255,255,255,.025)", borderRight: "1px solid rgba(255,255,255,.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="np" style={{ width: 230, minWidth: 230, background: "rgba(255,255,255,.025)", borderRight: "1px solid rgba(255,255,255,.06)", display: "flex", flexDirection: "column", overflow: "hidden", animation: "slideInLeft 0.4s cubic-bezier(0.23, 1, 0.32, 1) both" }}>
 
         {/* Logo */}
         <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
@@ -537,7 +548,7 @@ INSTRUCCIONES CRÍTICAS:
           </div>
 
           {/* Right panel */}
-          <div className="np" style={{ width: 316, minWidth: 316, borderLeft: "1px solid rgba(255,255,255,.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div className="np" style={{ width: 316, minWidth: 316, borderLeft: "1px solid rgba(255,255,255,.06)", display: "flex", flexDirection: "column", overflow: "hidden", animation: "slideInRight 0.4s cubic-bezier(0.23, 1, 0.32, 1) both" }}>
 
             {/* Generate */}
             <div style={{ padding: 16, borderBottom: "1px solid rgba(255,255,255,.06)" }}>
