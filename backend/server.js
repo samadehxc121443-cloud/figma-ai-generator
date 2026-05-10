@@ -29,6 +29,43 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// ── WIKIPEDIA RESEARCH ────────────────────────────────────────────────────
+app.post("/api/research", async (req, res) => {
+  const { topic } = req.body;
+  if (!topic || typeof topic !== "string" || topic.trim().length < 2) {
+    return res.status(400).json({ error: "topic required", found: false });
+  }
+
+  const searchWikipedia = async (lang) => {
+    try {
+      const slug = encodeURIComponent(topic.trim().replace(/\s+/g, "_"));
+      const response = await axios.get(
+        `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${slug}`,
+        { timeout: 5000, headers: { "User-Agent": "SlidesAIGenerator/1.0" } }
+      );
+      return response.data;
+    } catch {
+      return null;
+    }
+  };
+
+  let data = await searchWikipedia("en");
+  if (!data?.extract || data.extract.length < 50) {
+    data = await searchWikipedia("es");
+  }
+
+  if (!data?.extract || data.extract.length < 50) {
+    return res.json({ found: false, context: "", facts: [] });
+  }
+
+  const context = data.extract.slice(0, 600);
+  const factPattern = /(\d[\d,\.]*\s?(million|billion|trillion|%|km|years|años|users|personas|países|people|countries))/gi;
+  const rawFacts = context.match(factPattern) || [];
+  const facts = [...new Set(rawFacts)].slice(0, 5);
+
+  res.json({ found: true, context, facts, title: data.title });
+});
+
 // ── FIGMA PROXY ───────────────────────────────────────────────────────────
 const figma = axios.create({
   baseURL: "https://api.figma.com/v1",
