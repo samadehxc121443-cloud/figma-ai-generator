@@ -130,6 +130,28 @@ const SlidePreview = React.memo(({ slide, index, selected, onClick }) => {
             <span style={{ fontSize: 10.5, color: `${scheme.text}60` }}>{slide.metricLabel}</span>
           </div>
         )}
+
+        {/* Source badge */}
+        {slide.source && (
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: "4px",
+            padding: "2px 6px",
+            fontSize: "9px",
+            fontWeight: 500,
+            letterSpacing: "0.05em",
+            color: "rgba(255,255,255,0.5)",
+            marginTop: "4px",
+            zIndex: 1,
+          }}>
+            <span>📖</span>
+            <span>{slide.source}</span>
+          </div>
+        )}
       </div>
 
       {/* Card footer */}
