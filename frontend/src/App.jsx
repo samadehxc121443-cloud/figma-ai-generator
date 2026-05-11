@@ -16,7 +16,7 @@ const SLIDE_COLORS = [
   { bg: "linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)", accent: "#06B6D4", text: "#E0F7FF" },
   { bg: "linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%)", accent: "#EC4899", text: "#FFE0F0" },
   { bg: "linear-gradient(135deg, #0d1117 0%, #161b22 100%)", accent: "#10B981", text: "#D1FAE5" },
-  { bg: "linear-gradient(135deg, #1c0a00 0%, #3d1c02 100%)", accent: "#F59E0B", text: "#FEF3C7" },
+  { bg: "linear-gradient(135deg, #1a0829 0%, #2d0f4a 50%, #1a0829 100%)", accent: "#E879F9", text: "#FAE8FF" },
   { bg: "linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)", accent: "#F76C8A", text: "#FFE4E8" },
 ];
 
@@ -341,33 +341,35 @@ export default function App() {
 
   const buildGeneratePrompt = (type, prompt, title, research = null) => {
     const def = TYPES[type];
-    const researchBlock = research
-      ? `\nCONTEXTO VERIFICADO SOBRE EL TEMA:\n${research.context}\n${research.facts && research.facts.length > 0 ? `\nHECHOS DISPONIBLES: ${research.facts.join(", ")}` : ""}\n\nINSTRUCCIONES DE CONTENIDO:\n- Usar los datos del contexto para métricas reales (no inventar porcentajes)\n- Los bullets deben referenciar hechos específicos del contexto\n- Mínimo 2 slides deben incluir métricas del contexto verificado\n`
+    const researchBlock = research?.context
+      ? `\nCONTEXTO VERIFICADO:\n${research.context}\n${research.facts?.length > 0 ? `DATOS REALES: ${research.facts.join(", ")}` : ""}\n`
       : "";
-    return `Genera una ${def.label} completa y visualmente impactante${title ? ` titulada "${title}"` : ""} sobre: "${prompt}"
+
+    return `Eres un experto en storytelling visual. Crea una ${def.label} impactante y memorable${title ? ` titulada "${title}"` : ""} sobre: "${prompt}"
 ${researchBlock}
-Crea entre 6-10 slides. Devuelve ÚNICAMENTE un array JSON con esta estructura exacta para cada slide:
+Genera 7-8 slides con narrativa progresiva y emotiva. Devuelve ÚNICAMENTE un array JSON:
 [
   {
-    "type": "Portada | Agenda | Problema | Solución | Datos | Equipo | Propuesta | Conclusión | etc",
-    "title": "Título impactante y conciso (máx 8 palabras)",
-    "subtitle": "Subtítulo o descripción que amplía el título (1-2 oraciones)",
-    "bullets": ["Punto clave 1 específico", "Punto clave 2 específico", "Punto clave 3 específico"],
-    "metric": "número o dato real",
-    "metricLabel": "descripción de la métrica (solo si hay datos reales)",
-    "tag": "etiqueta corta (opcional)",
-    "source": "Wikipedia (solo si la métrica viene del contexto verificado, si no omitir)",
-    "content": "Párrafo adicional de contexto o detalle importante (1-2 oraciones)"
+    "type": "Portada | Problema | Contexto | Datos | Insight | Solución | Historia | Conclusión | CTA",
+    "title": "Título poderoso, directo y específico (máx 7 palabras)",
+    "subtitle": "Contexto rico que añade información NUEVA al título — no lo repitas (2-3 oraciones concretas)",
+    "bullets": ["Hecho concreto o dato específico", "Ejemplo real o contraste revelador", "Consecuencia o beneficio tangible"],
+    "metric": "número o dato impactante (usa datos conocidos, estudios, estadísticas reales del tema)",
+    "metricLabel": "qué representa ese número en contexto",
+    "tag": "etiqueta temática corta",
+    "source": "Wikipedia"
   }
 ]
 
-REGLAS CRÍTICAS:
-- Cada slide debe tener contenido ÚNICO y específico para "${prompt}"
-- Los títulos deben ser poderosos y directos
-- Los bullets deben ser concretos y accionables (no genéricos)
-- NO incluyas bullets vacíos o genéricos como "Punto 1"
-- Si no hay datos reales disponibles, NO inventes métricas — omite el campo
-- Varía los tipos de slide para crear narrativa visual`;
+REGLAS DE CALIDAD (obligatorias):
+- Narrativa: apertura con gancho → desarrollo con datos → cierre con acción/reflexión
+- Títulos: específicos y potentes, NUNCA genéricos ("La Importancia de X" → "Por Qué X Transforma Vidas")
+- Subtítulos: información ADICIONAL, concreta, que sorprenda o profundice
+- Bullets: cada uno debe ser un dato, ejemplo o acción específica — NUNCA "Punto clave 1"
+- Métricas: usa estadísticas conocidas del tema (estudios, porcentajes reales, años, cifras globales)
+- Portada: subtitle debe ser una frase emotiva y poderosa que engancha
+- Slide final: conclusión accionable con mensaje que perdura
+- Solo incluye "source": "Wikipedia" si usaste el CONTEXTO VERIFICADO de arriba`;
   };
 
   const buildChatSystemPrompt = (slides) => {
@@ -401,7 +403,7 @@ INSTRUCCIONES CRÍTICAS:
       const enrichedPrompt = buildGeneratePrompt(selectedType, prompt, title, research);
       const raw = await aiCall(
         [{ role: "user", content: enrichedPrompt }],
-        "Eres un experto en diseño visual y comunicación. Genera slides visualmente impactantes y profesionales. Responde ÚNICAMENTE con un array JSON válido, sin backticks ni texto adicional."
+        "Eres un experto en storytelling visual y presentaciones profesionales de alto impacto. Crea contenido específico, concreto y poderoso. NUNCA uses frases genéricas. Responde ÚNICAMENTE con el array JSON, sin backticks ni texto adicional."
       );
       const result = parseSlides(raw);
       setSlides(result);
